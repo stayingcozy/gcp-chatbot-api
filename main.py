@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google import genai
 from typing import Optional
@@ -6,6 +7,19 @@ from typing import Optional
 from settings import PROJECT_ID, LOCATION, FAST_PRODUCTION, PORT
 
 app = FastAPI()
+
+if not FAST_PRODUCTION:
+    origins = ["http://localhost:3000"]
+else:
+    origins = ["https://twohearts.tech"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class ChatRequest(BaseModel):
     prompt: str
@@ -33,7 +47,8 @@ async def generate_text(request: ChatRequest):
             contents=prompt
         )
 
-        return response.model_dump_json(indent=2)
+        # return response.model_dump_json(indent=2)
+        return response.text
 
     except Exception as e:
         print(f"Error during text generation: {e}")
@@ -42,4 +57,4 @@ async def generate_text(request: ChatRequest):
 if __name__ == '__main__':
     import uvicorn
     client = load_client()
-    uvicorn.run(app, host="0.0.0.0", port=PORT, reload=FAST_PRODUCTION)
+    uvicorn.run(app, port=PORT, reload=FAST_PRODUCTION)
