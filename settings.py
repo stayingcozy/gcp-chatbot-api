@@ -7,5 +7,5 @@ load_dotenv(dotenv_path)
 
 PROJECT_ID = os.getenv("PROJECT_ID")
 LOCATION = os.getenv("LOCATION")
-PORT = os.getenv("PORT")
-FLASK_PRODUCTION = os.getenv('FLASK_PRODUCTION', 'False').lower() == 'true' 
+PORT = int(os.getenv("PORT"))
+FAST_PRODUCTION = os.getenv('FAST_PRODUCTION', 'False').lower() == 'true' 

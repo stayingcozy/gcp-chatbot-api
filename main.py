@@ -1,49 +1,45 @@
-from flask import Flask, request, jsonify, Response
+from fastapi import FastAPI, HTTPException, Response
+from pydantic import BaseModel
 from google import genai
+from typing import Optional
 
-from settings import PROJECT_ID, LOCATION, FLASK_PRODUCTION, PORT
+from settings import PROJECT_ID, LOCATION, FAST_PRODUCTION, PORT
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route("/healthcheck", methods=["GET"])
-def healthcheck():
-    return Response(status=200)
+class ChatRequest(BaseModel):
+    prompt: str
+    model: Optional[str] = "gemini-2.0-flash"
 
 def load_client():
     return genai.Client(project=PROJECT_ID, location=LOCATION, vertexai=True)
 
-@app.route('/chat/blurb', methods=['POST'])
-def generate_text():
+@app.get("/healthcheck")
+def healthcheck():
+    return Response(status_code=200)
+
+@app.post('/chat/blurb')
+async def generate_text(request: ChatRequest):
     """
     Generates text using the Gemini model based on the provided prompt in the POST request.
     Returns a JSON response containing the generated text.
     """
-
     try:
-        # Grab json inputs
-        req_body = request.get_json()
-        prompt = req_body.get('prompt') 
-        model = req_body.get('model')
+        prompt = request.prompt
+        model = request.model
 
-        if not prompt:
-            return jsonify({"error": "Prompt is required in the request body"}), 400
-        if not model:
-            model = "gemini-2.0-flash"
-
-        # Call Model
         response = client.models.generate_content(
-            model = model,
-            contents = prompt
+            model=model,
+            contents=prompt
         )
 
-        # Return the generated text in a JSON response
-        return response.model_dump_json(indent=2), 200
+        return response.model_dump_json(indent=2)
 
     except Exception as e:
         print(f"Error during text generation: {e}")
-        return jsonify({"error": f"An error occurred: {e}"}), 500
-
+        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
 
 if __name__ == '__main__':
+    import uvicorn
     client = load_client()
-    app.run(debug=FLASK_PRODUCTION, port=PORT)
+    uvicorn.run(app, host="0.0.0.0", port=PORT, reload=FAST_PRODUCTION)
