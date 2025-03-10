@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google import genai
-from typing import Optional
+from datetime import datetime
+from typing import List
+import json
 
 from settings import PROJECT_ID, LOCATION, FAST_PRODUCTION, PORT
 
@@ -21,9 +24,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class Part(BaseModel):
+    type: str
+    text: str
+
+class Message(BaseModel):
+    role: str
+    content: str
+    id: str
+    createdAt: datetime
+    parts: List[Part]
+
 class ChatRequest(BaseModel):
-    prompt: str
-    model: Optional[str] = "gemini-2.0-flash"
+    id: str
+    messages: List[Message]
+    selectedChatModel: str
 
 def load_client():
     return genai.Client(project=PROJECT_ID, location=LOCATION, vertexai=True)
@@ -38,17 +53,21 @@ async def generate_text(request: ChatRequest):
     Generates text using the Gemini model based on the provided prompt in the POST request.
     Returns a JSON response containing the generated text.
     """
-    try:
-        prompt = request.prompt
-        model = request.model
+    try:   
 
-        response = client.models.generate_content(
-            model=model,
-            contents=prompt
-        )
+        # Gather inputs 
+        model = request.selectedChatModel
+        messages = request.messages
+        last_user_message = messages[-1].content
 
-        # return response.model_dump_json(indent=2)
-        return response.text
+        async def stream():
+            for chunk in client.models.generate_content_stream(
+                model=model, contents=last_user_message
+            ):
+                # Format the response according to Data Stream Protocol (useChat() from vercel ai library)
+                yield  f'0:{json.dumps(chunk.text)}\n'
+    
+        return StreamingResponse(stream(), media_type="text/event-stream")
 
     except Exception as e:
         print(f"Error during text generation: {e}")
@@ -57,4 +76,4 @@ async def generate_text(request: ChatRequest):
 if __name__ == '__main__':
     import uvicorn
     client = load_client()
-    uvicorn.run(app, port=PORT, reload=FAST_PRODUCTION)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
