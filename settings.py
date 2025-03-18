@@ -8,4 +8,6 @@ load_dotenv(dotenv_path)
 PROJECT_ID = os.getenv("PROJECT_ID")
 LOCATION = os.getenv("LOCATION")
 PORT = int(os.getenv("PORT"))
-FAST_PRODUCTION = os.getenv('FAST_PRODUCTION', 'False').lower() == 'true' 
+FAST_PRODUCTION = os.getenv('FAST_PRODUCTION', 'False').lower() == 'True' 
+SUPABASE_URL = os.getenv("PUBLIC_SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SECRET_KEY")
