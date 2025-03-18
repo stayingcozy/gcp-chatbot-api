@@ -8,15 +8,15 @@ from datetime import datetime
 from typing import List
 import json
 
-from settings import PROJECT_ID, LOCATION, FAST_PRODUCTION, PORT
+from settings import PROJECT_ID, LOCATION, PRODUCTION, PORT
 from supabase_service import download_image_db
 
 app = FastAPI()
 
-if not FAST_PRODUCTION:
-    origins = ["http://localhost:3000"]
-else:
+if PRODUCTION:
     origins = ["https://twohearts.tech"]
+else:
+    origins = ["http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
