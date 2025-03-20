@@ -8,8 +8,8 @@ from datetime import datetime
 from typing import List
 import json
 
-from settings import PROJECT_ID, LOCATION, PRODUCTION, PORT
-from supabase_service import download_image_db
+from settings import PROJECT_ID, LOCATION, PRODUCTION, PORT, SUPASECRET
+from cloud import access_secret_version, download_image_db
 
 app = FastAPI()
 
@@ -54,6 +54,16 @@ def load_client():
 @app.get("/healthcheck")
 def healthcheck():
     return Response(status_code=200)
+
+@app.get("/secretcheck")
+def secretcheck():
+    """ Return a hello world secret """
+
+    # copy secret ID from secret create in google cloud console / vs code extension
+    message = access_secret_version(SUPASECRET) 
+
+    return {"message": message}
+    
 
 @app.post('/chat/blurb')
 async def multimodal_generate_text(request: ChatRequest):

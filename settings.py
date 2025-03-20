@@ -11,3 +11,4 @@ PORT = int(os.getenv("PORT"))
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true' 
 SUPABASE_URL = os.getenv("PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SECRET_KEY")
+SUPASECRET = os.getenv("SUPASECRET")

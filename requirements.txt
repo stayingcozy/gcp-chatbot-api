@@ -4,3 +4,4 @@ pydantic
 google-genai
 python-dotenv
 supabase
+google-cloud-secret-manager
