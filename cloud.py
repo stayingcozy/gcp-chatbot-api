@@ -1,5 +1,12 @@
 from supabase import create_client, Client
 from settings import SUPABASE_URL, SUPABASE_KEY
+from io import BytesIO, BufferedReader
+import os
+
+def get_random_hex():
+    random_bytes = os.urandom(8)
+    random_hex = random_bytes.hex()
+    return random_hex
 
 # Google Cloud #
 
@@ -45,4 +52,35 @@ def download_image_db(storage_bucket: str, download_path: str) -> bytes | None:
     except Exception as error:
         print(f"Error downloading image: {str(error)}")
         return None
+
+def upload_image_db(storage_bucket: str, upload_path: str, image_bytes: bytes)-> bytes | None:
+    '''Upload Image to supabase storage '''
+
+    try:
+
+        image_stream = BufferedReader(BytesIO(image_bytes))
+
+        response = (
+            supabase_client.storage
+            .from_(storage_bucket)
+            .upload(
+                path=upload_path, 
+                file=image_stream, # BufferedReader | bytes | FileIO | string | Path
+                file_options={"content-type": "image/jpeg", "cache-control": "3600", "upsert": "false"}
+            )
+        )
+
+        if response is None:
+            raise ValueError("Failed to upload image")
+        
+        return  response
     
+    except Exception as error:
+        print(f'Error uploading image: {str(error)}')
+        return None
+    
+def create_signed_url(storage_bucket, result)-> str:            
+    signed_url_response = supabase_client.storage.from_(storage_bucket).create_signed_url(result, 3600)  # 3600 seconds (1 hour)
+    signed_url = signed_url_response["signedURL"]
+    
+    return signed_url 
